@@ -1,22 +1,25 @@
 import os
 
 import numpy as np
+import keras 
 
 from keras.utils import to_categorical, Sequence
-from keras.preprocessing import image, ImageDataGenerator
+from keras.preprocessing import image
+from keras.preprocessing.image import ImageDataGenerator
 
 class ImageSequence(Sequence): 
     '''Extends the keras Sequence class. It takes in a series of indicies and it pulls the pictures from the folder specified
     it generates batches with the inputed batch size that have been preprocessed by the inputed preprocess function
     '''
-    def __init__(self,labeldict, batch_size, train_indicies,data_generator,folder = 'data/initial_images/'):
+    def __init__(self,labeldict, batch_size, train_indicies,preprocessing_func,folder = 'data/initial_images/'):
         self.NUM_CLASSES = 228
         self.image_folder = folder
         self.indicies = train_indicies
         self.labels = labeldict
         self.batch_size = batch_size
         self.length = len(labeldict)
-        self.data_generator = data_generator
+        #self.data_generator = data_generator
+        self.preprocessing_func = preprocessing_func
     def __len__(self):
         return (len(self.indicies)//self.batch_size)
     
@@ -41,7 +44,7 @@ class ImageSequence(Sequence):
         x = image.img_to_array(img)
         x = np.expand_dims(x, axis = 0)
         x = x.reshape((224,224,3))
-        x = self.data_generator.random_transform(x, seed = 40)
+        x = self.preprocessing_func(x)
         return x
 
     
@@ -75,17 +78,11 @@ def create_sequence_and_val(labels, val_size,batch_size,preprocess_func,folder =
     '''creates a ImageSequence object as well as a validation set for the keras 
     fit_generator method
     '''
-    #todo: adjust these parameters
-    data_generator = ImageDataGenerator(rotation_range=20,
-                                        width_shift_range=0.2,
-                                        height_shift_range=0.2,
-                                        horizontal_flip=True,
-                                        preprocessing_function=preprocess_func)
     
     train_inds,val_inds = create_train_val_inds(val_size, folder = folder)
     
     Xval,yval = create_validation(labels,val_inds,preprocess_func,folder = folder)
     
-    train_sequence = ImageSequence(labels, batch_size, train_inds, data_generator, folder = folder)
+    train_sequence = ImageSequence(labels, batch_size, train_inds, preprocess_func, folder = folder)
     
     return train_sequence, Xval, yval
