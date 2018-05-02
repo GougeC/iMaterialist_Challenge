@@ -17,7 +17,6 @@ class ImageSequence(Sequence):
         self.indicies = train_indicies
         self.labels = labeldict
         self.batch_size = batch_size
-        self.length = len(labeldict)
         #self.data_generator = data_generator
         self.preprocessing_func = preprocessing_func
     def __len__(self):
@@ -26,7 +25,7 @@ class ImageSequence(Sequence):
     def __getitem__(self, idx):
         '''gets and processes one batch
         '''
-        inds = self.indicies[idx * self.batch_size : idx * (self.batch_size+1)]
+        inds = self.indicies[idx * self.batch_size : (idx+1) * (self.batch_size)]
         X = np.array([self.get_img_array(n) for n in inds])
         y = np.array([self.get_label(n) for n in inds])   
         return X, y
@@ -48,9 +47,10 @@ class ImageSequence(Sequence):
         return x
 
     
-def create_train_val_inds(val_size,folder = 'data/initial_images/'):
+def create_train_val_inds(val_size,folder = 'data/initial_images/',seed = 42):
         '''helper function to make a train/val split
         '''
+        np.random.seed = seed
         inds = [x[:-4] for x in os.listdir(folder)]
         val_inds = np.random.choice(inds,size = val_size)
         train_inds = np.array([x for x in inds if x not in val_inds])
@@ -74,12 +74,12 @@ def create_validation(labels, validation_inds, preprocess_func, folder = 'data/i
     X,y = np.array(X), np.array(y)
     return X,y
 
-def create_sequence_and_val(labels, val_size,batch_size,preprocess_func,folder = 'data/initial_images/'):
+def create_sequence_and_val(labels, val_size,batch_size,preprocess_func,folder = 'data/initial_images/',seed = 42):
     '''creates a ImageSequence object as well as a validation set for the keras 
     fit_generator method
     '''
     
-    train_inds,val_inds = create_train_val_inds(val_size, folder = folder)
+    train_inds,val_inds = create_train_val_inds(val_size, folder = folder,seed = seed)
     
     Xval,yval = create_validation(labels,val_inds,preprocess_func,folder = folder)
     
